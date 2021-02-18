@@ -22,7 +22,7 @@ summary(dataset_catex)
 dataset_catex$PropBirdPred<-dataset_catex$Bird72/(dataset_catex$NonLost72H - dataset_catex$Arth72 - dataset_catex$Mam72)
 is.numeric(dataset_catex$PropBirdPred) 
 
-# NAs were generated in lines wehre all caterpillars were eaten by arthropods, thus the NAs were re-coded as 0
+# NAs were generated in lines where all caterpillars were eaten by arthropods, thus the NAs were re-coded as 0
 dataset_catex <- dataset_catex %>%
   mutate(PropBirdPred = coalesce(PropBirdPred, 0))
 summary(dataset_catex)
@@ -113,10 +113,6 @@ ggsave(
   height = PDF_height,
   units = "in")
 
-### Models TOTAL PREDATION
-### cbind(dead, alive) is used in the binomial models
-### generally we need to use the number of predated caterpillars and number of those that survived 
-
 
 #----------------------------------------------------------#
 # 4.1 Model build for bird predation  -----
@@ -183,6 +179,7 @@ plot(glm_bird_predation_emmeans)
       data = dataset_catex,
       aes(y = PropBirdPred),
       alpha = 0.5,
+      size = 2,
       position = position_jitterdodge(
         dodge.width = 0.5,
         jitter.width = 0.15)) +
@@ -193,22 +190,29 @@ plot(glm_bird_predation_emmeans)
         ymax = asymp.UCL),
       width=0.2,
       position = position_dodge(width = 0.5, preserve = "single"),
-      size = 1)+
+      size = 2)+
     
     geom_point(
       shape = 0,
       position = position_dodge(width = 0.5),
       size = 3) +
     
-    labs(
-      x = "Site",
-      y = expression(paste("Proportion of caterpillars attacked by birds")) )+
-   scale_fill_manual(values = pallete_1)+
-   scale_color_manual(values = pallete_1)+
-    theme(
-      text = element_text(size = text_size),
-      legend.position = "right"))
+   labs(
+     x = "Site",
+     y = expression(paste("Proportion of caterpillars attacked by birds")) )+
+   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
+   theme(
+     text = element_text(size = text_size),
+     legend.position = "right")) +
+  theme(axis.line = element_line(colour = "black", size = 1, linetype = "solid")) +
+  theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 #NOTE - as there was no predation by bird in the LAK understory, it is doing weird things there
+
+# to turn and rescale the figure 
+model_plot_02<-model_plot_02 + coord_flip() +
+  scale_x_discrete(limits=c("EUC", "DRO", "KAK",  "BUB", "LAK","TOM"))
+#NOTE not flipping anymore because: Coordinate system already present. Adding new coordinate system, which will replace the existing one.
 
 # save pdf
 ggsave(

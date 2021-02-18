@@ -51,7 +51,7 @@ is.numeric(dataset_catex$PropTotPred)
   
   labs(
     x = "Site", 
-    y = expression(paste("Total Predation/Exposed"))) +
+    y = expression(paste("Total proportion of predated caterpillars"))) +
   theme(
     text = element_text(size = text_size),
     legend.position = "none"))
@@ -93,7 +93,7 @@ ggsave(
     
     labs(
       x = "Site", 
-      y = expression(paste("Total Predation/Exposed"))) +
+      y = expression(paste("Total proportion of predated caterpillar"))) +
     theme(
       text = element_text(size = text_size),
       legend.position = "top"))
@@ -139,7 +139,7 @@ glm_total_predation_dd %>%
 
 # build the best model
 glm_predation_select<-glm(cbind(TotalPred72H, Survived72H)~Site+Strata+Site:Strata,
-                          data = dataset_catex, family = "binomial", 
+                          data = dataset_catex, family = "quasibinomial", 
                           na.action = "na.fail")
 
 summary(glm_predation_select)
@@ -154,7 +154,7 @@ glm_predation_emmeans <-
     glm_predation_select,
     pairwise ~ Strata*Site,
     type = "response")
-#NOTE: A nesting structure was detected in the fitted model: Strata %in% Site
+
 plot(glm_predation_emmeans)
 
 #----------------------------------------------------------#
@@ -177,6 +177,7 @@ plot(glm_predation_emmeans)
       data = dataset_catex,
       aes(y = PropTotPred),
       alpha = 0.5,
+      size = 2,
       position = position_jitterdodge(
         dodge.width = 0.5,
         jitter.width = 0.15)) +
@@ -185,23 +186,29 @@ plot(glm_predation_emmeans)
       aes(
         ymin =  asymp.LCL,
         ymax = asymp.UCL),
-      width=0.2,
+      width=0.3,
       position = position_dodge(width = 0.5, preserve = "single"),
-      size = 1)+
+      size = 2)+
     
     geom_point(
       shape = 0,
       position = position_dodge(width = 0.5),
-      size = 3) +
+      size = 4) +
     
     labs(
       x = "Site",
-      y = expression(paste("Total predation (proportion)")) )+
-   scale_fill_manual(values = pallete_1)+
-   scale_color_manual(values = pallete_1)+
+      y = expression(paste("Total proportion of attacked caterpillars")) )+
+   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
     theme(
       text = element_text(size = text_size),
-      legend.position = "right"))
+      legend.position = "right")) +
+  theme(axis.line = element_line(colour = "black", size = 1, linetype = "solid")) +
+  theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
+
+# to turn and rescale the figure 
+model_plot_01<-model_plot_01 + coord_flip() +
+  scale_x_discrete(limits=c("EUC", "DRO", "KAK",  "BUB", "LAK","TOM")) 
 
 # save pdf
 ggsave(

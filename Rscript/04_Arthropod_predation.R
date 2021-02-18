@@ -157,7 +157,6 @@ glm_arthropod_predation_emmeans <-
     pairwise ~ Strata*Site,
     type = "response")
 plot(glm_arthropod_predation_emmeans)
-#NOTE - as there was no predation by bird in the LAK understory, it is doing weird things there
 
 #----------------------------------------------------------#
 # 5.2 Figure from model for arthropod predation draw -----
@@ -179,6 +178,7 @@ plot(glm_arthropod_predation_emmeans)
       data = dataset_catex,
       aes(y = PropArthPred),
       alpha = 0.5,
+      size = 2,
       position = position_jitterdodge(
         dodge.width = 0.5,
         jitter.width = 0.15)) +
@@ -189,21 +189,26 @@ plot(glm_arthropod_predation_emmeans)
         ymax = asymp.UCL),
       width=0.2,
       position = position_dodge(width = 0.5, preserve = "single"),
-      size = 1)+
+      size = 2)+
     
     geom_point(
       shape = 0,
       position = position_dodge(width = 0.5),
       size = 3) +
-    
-    labs(
-      x = "Site",
-      y = expression(paste("Proportion of caterpillars attacked by arthropods")) )+
-   scale_fill_manual(values = pallete_1)+
-   scale_color_manual(values = pallete_1)+
-    theme(
-      text = element_text(size = text_size),
-      legend.position = "right"))
+   labs(
+     x = "Site",
+     y = expression(paste("Proportion of caterpillars attacked by arthropods")) )+
+   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
+   theme(
+     text = element_text(size = text_size),
+     legend.position = "right")) +
+  theme(axis.line = element_line(colour = "black", size = 1, linetype = "solid")) +
+  theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
+
+model_plot_03<-model_plot_03 + coord_flip() +
+  scale_x_discrete(limits=c("EUC", "DRO", "KAK",  "BUB", "LAK","TOM")) 
+
 
 # save pdf
 ggsave(

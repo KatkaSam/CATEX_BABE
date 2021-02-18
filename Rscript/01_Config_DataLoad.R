@@ -44,7 +44,7 @@ library (randomForest)
 
 # 1.1 caterpillar predation data -----
 dataset_catex <-  
-  readxl::read_xlsx("Data/input/CatexBABE_Complete.xlsx")
+  readxl::read_xlsx("data/input/CatexBABE_Complete.xlsx")
 
 #----------------------------------------------------------#
 # 2. graphical properties definition  -----
@@ -59,11 +59,7 @@ PDF_height <-  6
 # get the flat violin geom
 source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
 
-# Strata pallete
-pallete_1 <-  brewer.pal(3,"Dark2")
-names(pallete_1) <-  
-  dataset_catex$Strata %>% 
-  unique()
+
 
 
 
