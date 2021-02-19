@@ -118,6 +118,33 @@ ggsave(
 # 5.1 Model build for arthropod predation  -----
 #----------------------------------------------------------#
 
+glmm_arthropod_predation_full <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)*Strata + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+glmm_arthropod_predation_module <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_arthropod_predation_noStrata <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2) + (1|Sp2),
+                                       data = dataset_catex, family = "binomial", 
+                                       na.action = "na.fail")
+glmm_arthropod_predation_linear <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_arthropod_predation_full_add <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)+Strata + (1|Sp2),
+                                       data = dataset_catex, family = "binomial", 
+                                       na.action = "na.fail")
+glmm_arthropod_predation_linear_add <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Sp2),
+                                         data = dataset_catex, family = "binomial", 
+                                         na.action = "na.fail")
+glmm_arthropod_predation_Strata <- glmer(cbind(Arth72, Survived72H)~Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_arthropod_predation_null <- glmer(cbind(Arth72, Survived72H)~1 + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+AICctab(glmm_arthropod_predation_full, glmm_arthropod_predation_module, glmm_arthropod_predation_noStrata, glmm_arthropod_predation_linear,
+        glmm_arthropod_predation_full_add, glmm_arthropod_predation_linear_add, glmm_arthropod_predation_Strata, glmm_arthropod_predation_null)
+
 glm_arthropod_predation_full <- glm(cbind(Arth72, Survived72H)~Site*Strata,
                   data = dataset_catex, family = "binomial", 
                   na.action = "na.fail")
@@ -140,9 +167,19 @@ glm_arthropod_predation_dd %>%
   View()
 
 # build the best model
-glm_arthropod_predation_select<-glm(cbind(Arth72, Survived72H)~Site+Strata+Site:Strata,
-                          data = dataset_catex, family = "binomial", 
-                          na.action = "na.fail")
+glm_arthropod_predation_select<-glmm_arthropod_predation_full
+
+
+## Predict
+newData.Arth <- data.frame(Lat = rep(seq(from = -90, to = 90, length.out = 500),2),
+                      Strata = rep(c("U", "C"), each = 500))
+
+newData.Arth$Predation <- predict(glm_arthropod_predation_select, newdata = newData.Arth, re.form = NA, type = "response")
+par(mfrow = c(1,2))
+plot(dataset_catex$Arth72/(dataset_catex$Arth72 + dataset_catex$Survived72H) ~ 
+       jitter(dataset_catex$Lat), col = c("deepskyblue3", "goldenrod3")[as.numeric(as.factor(dataset_catex$Strata))])
+lines(newData.Arth$Lat[newData.Arth$Strata == "U"], newData.Arth$Predation[newData.Arth$Strata == "U"], col = "goldenrod3")
+lines(newData.Arth$Lat[newData.Arth$Strata == "C"], newData.Arth$Predation[newData.Arth$Strata == "C"], col = "deepskyblue3")
 
 summary(glm_arthropod_predation_select)
 check_model(glm_arthropod_predation_select, binwidth=10)

@@ -118,9 +118,33 @@ ggsave(
 # 4.1 Model build for bird predation  -----
 #----------------------------------------------------------#
 
-glm_bird_predation_full <- glm(cbind(Bird72, Survived72H)~Site*Strata,
-                  data = dataset_catex, family = "binomial", 
-                  na.action = "na.fail")
+
+glmm_bird_predation_full <- glmer(cbind(Bird72, Survived72H)~poly(Lat,2)*Strata + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+glmm_bird_predation_module <- glmer(cbind(Bird72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_bird_predation_noStrata <- glmer(cbind(Bird72, Survived72H)~poly(Lat,2) + (1|Sp2),
+                                       data = dataset_catex, family = "binomial", 
+                                       na.action = "na.fail")
+glmm_bird_predation_linear <- glmer(cbind(Bird72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_bird_predation_full_add <- glmer(cbind(Bird72, Survived72H)~poly(Lat,2)+Strata + (1|Sp2),
+                                       data = dataset_catex, family = "binomial", 
+                                       na.action = "na.fail")
+glmm_bird_predation_linear_add <- glmer(cbind(Bird72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Sp2),
+                                         data = dataset_catex, family = "binomial", 
+                                         na.action = "na.fail")
+glmm_bird_predation_Strata <- glmer(cbind(Bird72, Survived72H)~Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_bird_predation_null <- glmer(cbind(Bird72, Survived72H)~1 + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+AICctab(glmm_bird_predation_full, glmm_bird_predation_module, glmm_bird_predation_noStrata, glmm_bird_predation_linear,
+        glmm_bird_predation_full_add, glmm_bird_predation_linear_add, glmm_bird_predation_Strata, glmm_bird_predation_null)
 
 # compute all posible combinations
 glm_bird_predation_dd <- 

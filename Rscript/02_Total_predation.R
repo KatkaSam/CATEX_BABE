@@ -116,14 +116,37 @@ ggsave(
 #----------------------------------------------------------#
 
 
-glm_total_predation_full <- glm(cbind(TotalPred72H, Survived72H)~Site*Strata,
+glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Sp2),
                   data = dataset_catex, family = "binomial", 
                   na.action = "na.fail")
+glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Sp2),
+                                     data = dataset_catex, family = "binomial", 
+                                     na.action = "na.fail")
+glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Sp2),
+                                         data = dataset_catex, family = "binomial", 
+                                         na.action = "na.fail")
+glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Sp2),
+                                   data = dataset_catex, family = "binomial", 
+                                   na.action = "na.fail")
+AICctab(glmm_total_predation_full, glmm_total_predation_module, glmm_total_predation_noStrata, glmm_total_predation_linear,
+        glmm_total_predation_full_add, glmm_total_predation_linear_add, glmm_total_predation_Strata, glmm_total_predation_null)
 
 # compute all posible combinations
-glm_total_predation_dd <- 
+glmm_total_predation_dd <- 
   MuMIn::dredge(
-    glm_total_predation_full,
+    glmm_total_predation_full,
     trace = T)
 
 # save result table
@@ -138,9 +161,7 @@ glm_total_predation_dd %>%
   View()
 
 # build the best model
-glm_predation_select<-glm(cbind(TotalPred72H, Survived72H)~Site+Strata+Site:Strata,
-                          data = dataset_catex, family = "quasibinomial", 
-                          na.action = "na.fail")
+glm_predation_select<-glmm_total_predation_full
 
 summary(glm_predation_select)
 check_model(glm_predation_select, binwidth = 10)
@@ -152,11 +173,21 @@ qplot(residuals(glm_predation_select))
 glm_predation_emmeans <-
   emmeans(
     glm_predation_select,
-    pairwise ~ Strata*Site,
+    pairwise ~ Lat*Site,
     type = "response")
 
 plot(glm_predation_emmeans)
 
+## Predict
+newData <- data.frame(Lat = rep(seq(from = -90, to = 90, length.out = 500),2),
+                      Strata = rep(c("U", "C"), each = 500))
+
+newData$Predation <- predict(glm_predation_select, newdata = newData, re.form = NA, type = "response")
+
+plot(dataset_catex$TotalPred72H/(dataset_catex$TotalPred72H + dataset_catex$Survived72H) ~ 
+       jitter(dataset_catex$Lat), col = c("deepskyblue3", "goldenrod3")[as.numeric(as.factor(dataset_catex$Strata))])
+lines(newData$Lat[newData$Strata == "U"], newData$Predation[newData$Strata == "U"], col = "goldenrod3")
+lines(newData$Lat[newData$Strata == "C"], newData$Predation[newData$Strata == "C"], col = "deepskyblue3")
 #----------------------------------------------------------#
 # 3.2 Figure from model draw -----
 #----------------------------------------------------------#

@@ -46,6 +46,13 @@ library (randomForest)
 dataset_catex <-  
   readxl::read_xlsx("data/input/CatexBABE_Complete.xlsx")
 
+dataset_catex$Sp2 <- paste(dataset_catex$Site, dataset_catex$Species, sep = "_")
+
+Sites <- data.frame(Site = c("TOM", "LAK", "BUB", "KAK", "DRO", "EUC"),
+                    Lat = c(42.68, 51.2, 29.26, -5.13, -16.1, -33.62))
+
+dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
+
 #----------------------------------------------------------#
 # 2. graphical properties definition  -----
 #----------------------------------------------------------#
