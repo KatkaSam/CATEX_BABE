@@ -9,19 +9,12 @@
 #
 #----------------------------------------------------------#
 
-source("RScript/01_Config_DataLoad.R")
-
 #----------------------------------------------------------#
 # 5. Exploratory graphs for arthropod predation -----
 #----------------------------------------------------------#
 
 # see data
 summary(dataset_catex)
-
-# prepare proportional data for graphs
-dataset_catex$PropArthPred<-dataset_catex$Arth72/(dataset_catex$NonLost72H - dataset_catex$Bird72 - dataset_catex$Mam72)
-is.numeric(dataset_catex$PropArthPred) 
-# NAs were not generated so all is ok
 
 (expl_plot5<-
   dataset_catex%>% 
@@ -118,151 +111,91 @@ ggsave(
 # 5.1 Model build for arthropod predation  -----
 #----------------------------------------------------------#
 
-glmm_arthropod_predation_full <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)*Strata + (1|Sp2),
-                                   data = dataset_catex, family = "binomial", 
-                                   na.action = "na.fail")
-glmm_arthropod_predation_module <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Sp2),
-                                     data = dataset_catex, family = "binomial", 
-                                     na.action = "na.fail")
-glmm_arthropod_predation_noStrata <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2) + (1|Sp2),
-                                       data = dataset_catex, family = "binomial", 
-                                       na.action = "na.fail")
-glmm_arthropod_predation_linear <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Sp2),
-                                     data = dataset_catex, family = "binomial", 
-                                     na.action = "na.fail")
-glmm_arthropod_predation_full_add <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)+Strata + (1|Sp2),
-                                       data = dataset_catex, family = "binomial", 
-                                       na.action = "na.fail")
-glmm_arthropod_predation_linear_add <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Sp2),
-                                         data = dataset_catex, family = "binomial", 
-                                         na.action = "na.fail")
-glmm_arthropod_predation_Strata <- glmer(cbind(Arth72, Survived72H)~Strata + (1|Sp2),
-                                     data = dataset_catex, family = "binomial", 
-                                     na.action = "na.fail")
-glmm_arthropod_predation_null <- glmer(cbind(Arth72, Survived72H)~1 + (1|Sp2),
-                                   data = dataset_catex, family = "binomial", 
-                                   na.action = "na.fail")
+glmm_arthropod_predation_full <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)*Strata + (1|Species),
+                                   data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_module <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species),
+                                     data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_noStrata <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2) + (1|Species),
+                                       data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_linear <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species),
+                                     data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_full_add <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)+Strata + (1|Species),
+                                       data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_linear_add <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species),
+                                         data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_Strata <- glmer(cbind(Arth72, Survived72H)~Strata + (1|Species),
+                                     data = dataset_catex, family = "binomial")
+glmm_arthropod_predation_null <- glmer(cbind(Arth72, Survived72H)~1 + (1|Species),
+                                   data = dataset_catex, family = "binomial")
 AICctab(glmm_arthropod_predation_full, glmm_arthropod_predation_module, glmm_arthropod_predation_noStrata, glmm_arthropod_predation_linear,
         glmm_arthropod_predation_full_add, glmm_arthropod_predation_linear_add, glmm_arthropod_predation_Strata, glmm_arthropod_predation_null)
 
-glm_arthropod_predation_full <- glm(cbind(Arth72, Survived72H)~Site*Strata,
-                  data = dataset_catex, family = "binomial", 
-                  na.action = "na.fail")
+glm_arthropod_predation_select <- glmm_arthropod_predation_full
 
-# compute all posible combinations
-glm_arthropod_predation_dd <- 
-  MuMIn::dredge(
-    glm_arthropod_predation_full,
-    trace = T)
 
-# save result table
-glm_arthropod_predation_dd %>% 
+## Predict the values
+newDataArth <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
+                          Strata = rep(c("U", "C"), each = 500))
+
+newDataArth$ArthPredation <- predict(glm_arthropod_predation_select , newdata = newDataArth, re.form = NA, type = "response")
+
+model_plot_01 <-plot(dataset_catex$PropArthPred ~ 
+                       jitter(dataset_catex$Lat), col = c("deepskyblue3", "goldenrod3")[as.numeric(as.factor(dataset_catex$Strata))])
+lines(newDataArth$Lat[newDataArth$Strata == "U"], 
+      newDataArth$ArthPredation[newDataArth$Strata == "U"], col = "goldenrod3")
+lines(newDataArth$Lat[newDataArth$Strata == "C"], 
+      newDataArth$ArthPredation[newDataArth$Strata == "C"], col = "deepskyblue3")
+
+newDataArth %>% 
   as_tibble() %>% 
-  write_csv("data/output/arthropod_predation_model_result.csv")
+  write_csv("data/output/OK_prediction_latfull_arth.csv")
 
-# observe the best model
-glm_arthropod_predation_dd %>% 
-  as_tibble() %>% 
-  filter(delta < 2 ) %>% 
-  View()
-
-# build the best model
-glm_arthropod_predation_select<-glmm_arthropod_predation_full
-
-
-## Predict
-newData.Arth <- data.frame(Lat = rep(seq(from = -90, to = 90, length.out = 500),2),
-                      Strata = rep(c("U", "C"), each = 500))
-
-newData.Arth$Predation <- predict(glm_arthropod_predation_select, newdata = newData.Arth, re.form = NA, type = "response")
-par(mfrow = c(1,2))
-plot(dataset_catex$Arth72/(dataset_catex$Arth72 + dataset_catex$Survived72H) ~ 
-       jitter(dataset_catex$Lat), col = c("deepskyblue3", "goldenrod3")[as.numeric(as.factor(dataset_catex$Strata))])
-lines(newData.Arth$Lat[newData.Arth$Strata == "U"], newData.Arth$Predation[newData.Arth$Strata == "U"], col = "goldenrod3")
-lines(newData.Arth$Lat[newData.Arth$Strata == "C"], newData.Arth$Predation[newData.Arth$Strata == "C"], col = "deepskyblue3")
-
-summary(glm_arthropod_predation_select)
-check_model(glm_arthropod_predation_select, binwidth=10)
-model_performance(glm_arthropod_predation_select)
-check_heteroscedasticity(glm_arthropod_predation_select)
-qplot(residuals(glm_arthropod_predation_select))
-
-# calculate emmeans
-glm_arthropod_predation_emmeans <-
-  emmeans(
-    glm_arthropod_predation_select,
-    pairwise ~ Strata*Site,
-    type = "response")
-plot(glm_arthropod_predation_emmeans)
 
 #----------------------------------------------------------#
-# 5.2 Figure from model for arthropod predation draw -----
+# 5.2 Figure from model draw -----
 #----------------------------------------------------------#
 
-(model_plot_03 <- 
-   glm_arthropod_predation_emmeans$emmeans %>% 
-    as_tibble() %>% 
-    ggplot(
-      aes(
-        x=Site,
-        y = prob,
-        col = Strata,
-        fill=Strata)) + 
-  
-  scale_x_discrete(limits=c("TOM", "LAK", "BUB", "DRO", "KAK", "EUC")) +
+(model_plot_03 <- ggplot(dataset_catex,
+                         aes(
+                           x=Lat,
+                           y = ArthProp,
+                           col = Strata,
+                           fill=Strata,
+                           size = 2)) +
+      scale_y_reverse() +
+   coord_flip()+
    
-  geom_point(
-      data = dataset_catex,
-      aes(y = PropArthPred),
-      alpha = 0.5,
-      size = 2,
-      position = position_jitterdodge(
-        dodge.width = 0.5,
-        jitter.width = 0.15)) +
-    
-    geom_errorbar(
-      aes(
-        ymin =  asymp.LCL,
-        ymax = asymp.UCL),
-      width=0.2,
-      position = position_dodge(width = 0.5, preserve = "single"),
-      size = 2)+
-    
-    geom_point(
-      shape = 0,
-      position = position_dodge(width = 0.5),
-      size = 3) +
+   
+   geom_point(
+     data = dataset_catex,
+     aes(y = ArthProp),
+     alpha = 0.4,
+     size = 3,
+     position = position_jitterdodge(
+       dodge.width = 2,
+       jitter.width = 2)) +
+   
+   geom_line(data = newDataArth, aes(y = ArthPredation), size = 2) +
+   
    labs(
-     x = "Site",
-     y = expression(paste("Proportion of caterpillars attacked by arthropods")) )+
+     x = "Latitude",
+     y = expression(paste("Proportion attacked by arthropods")) )+
    scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
    scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
    theme(
      text = element_text(size = text_size),
-     legend.position = "right")) +
+     legend.position = "none")) +
   theme(axis.line = element_line(colour = "black", size = 1, linetype = "solid")) +
   theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 
-model_plot_03<-model_plot_03 + coord_flip() +
-  scale_x_discrete(limits=c("EUC", "DRO", "KAK",  "BUB", "LAK","TOM")) 
-
-
-# save pdf
 ggsave(
-  "figures/model_plot_03_Arthropod_predation.pdf",
+  "figures/model_plot_03_ArthropodPredations.pdf",
   model_plot_03,
   width = PDF_width,
   height = PDF_height,
   units = "in")
 
-# save the pairwise test 
-glm_arthropod_predation_emmeans$contrasts %>% 
-  as_tibble() %>% 
-  arrange(p.value) %>% 
-  write_csv("data/output/arthropod_predation_pairwise_contrast.csv")
-
-glm_arthropod_predation_emmeans$emmeans %>% 
-  as_tibble() %>% 
-  write_csv("data/output/arthropod_predation_pairwise_emmeans.csv")
-
+# scale_x_reverse()
+# scale_y_reverse() +
+# scale_y_continuous(position = "right") +
 

@@ -25,18 +25,15 @@ renv::restore(lockfile = "data/lock/revn.lock")
 # libraries
 library(lme4)
 library(bbmle)
+library(ggplot2)
 library(tidyverse)
 library(ggpubr)
-library(RColorBrewer)
 library(MuMIn)
 library(emmeans)
-library(performance)
-library(glmmTMB)
-library(ggplot2)
 library(dplyr)
 library(see)
 library(qqplotr)
-library (randomForest)
+library(glmmTMB)
 
 #----------------------------------------------------------#
 # 1. Import data -----
@@ -46,12 +43,12 @@ library (randomForest)
 dataset_catex <-  
   readxl::read_xlsx("data/input/CatexBABE_Complete.xlsx")
 
-dataset_catex$Sp2 <- paste(dataset_catex$Site, dataset_catex$Species, sep = "_")
-
 Sites <- data.frame(Site = c("TOM", "LAK", "BUB", "KAK", "DRO", "EUC"),
-                    Lat = c(42.68, 51.2, 29.26, -5.13, -16.1, -33.62))
+                    Lat = c(42.68, 51.2, 21.6, -5.13, -16.1, -33.62))
 
 dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
+
+
 
 #----------------------------------------------------------#
 # 2. graphical properties definition  -----
