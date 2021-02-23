@@ -22,7 +22,7 @@ summary(dataset_catex)
   ggplot(
          aes(
            x = Site,
-          y = PropBirdPred)) +
+          y = BirdProp)) +
   
   scale_x_discrete(limits=c("TOM", "LAK", "BUB", "DRO", "KAK", "EUC")) +
   
@@ -64,7 +64,7 @@ ggsave(
     ggplot(
       aes(
         x = Site,
-        y = PropBirdPred,
+        y = BirdProp,
         col=Strata,
         fill=Strata)) +
     
@@ -159,7 +159,7 @@ newDataBird %>%
                            y = BirdProp,
                            col = Strata,
                            fill=Strata,
-                           size = 2)) +
+                           size = 3)) +
    
    geom_point(
      data = dataset_catex,
@@ -176,8 +176,8 @@ newDataBird %>%
    labs(
      x = "Latitude",
      y = expression(paste("Proportion attacked by birds")) )+
-   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
-   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_fill_manual(values = c("#42adc7", "#ffb902"))+
+   scale_color_manual(values = c("#42adc7", "#ffb902"))+
    theme(
      text = element_text(size = text_size),
      legend.position = "right")) +

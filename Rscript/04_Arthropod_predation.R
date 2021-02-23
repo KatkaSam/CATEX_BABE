@@ -21,7 +21,7 @@ summary(dataset_catex)
   ggplot(
          aes(
            x = Site,
-          y = PropArthPred)) +
+          y = ArthProp)) +
   
   scale_x_discrete(limits=c("TOM", "LAK", "BUB", "DRO", "KAK", "EUC")) +
   
@@ -63,7 +63,7 @@ ggsave(
     ggplot(
       aes(
         x = Site,
-        y = PropArthPred,
+        y = ArthProp,
         col=Strata,
         fill=Strata)) +
     
@@ -139,7 +139,7 @@ newDataArth <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2
 
 newDataArth$ArthPredation <- predict(glm_arthropod_predation_select , newdata = newDataArth, re.form = NA, type = "response")
 
-model_plot_01 <-plot(dataset_catex$PropArthPred ~ 
+model_plot_01 <-plot(dataset_catex$ArthProp ~ 
                        jitter(dataset_catex$Lat), col = c("deepskyblue3", "goldenrod3")[as.numeric(as.factor(dataset_catex$Strata))])
 lines(newDataArth$Lat[newDataArth$Strata == "U"], 
       newDataArth$ArthPredation[newDataArth$Strata == "U"], col = "goldenrod3")
@@ -161,15 +161,15 @@ newDataArth %>%
                            y = ArthProp,
                            col = Strata,
                            fill=Strata,
-                           size = 2)) +
-      scale_y_reverse() +
+                           size = 3)) +
+  
+   scale_y_reverse() +
    coord_flip()+
    
    
    geom_point(
      data = dataset_catex,
      aes(y = ArthProp),
-     alpha = 0.4,
      size = 3,
      position = position_jitterdodge(
        dodge.width = 2,
@@ -180,8 +180,8 @@ newDataArth %>%
    labs(
      x = "Latitude",
      y = expression(paste("Proportion attacked by arthropods")) )+
-   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
-   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_fill_manual(values = c("#42adc7", "#ffb902"))+
+   scale_color_manual(values = c("#42adc7", "#ffb902"))+
    theme(
      text = element_text(size = text_size),
      legend.position = "none")) +

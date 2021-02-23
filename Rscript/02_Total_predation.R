@@ -163,13 +163,11 @@ newData %>%
     y = PropTotPred,
     col = Strata,
     fill=Strata,
-    alpha = 0.5,
-    size = 2)) +
+    size = 3)) +
    
    geom_point(
      data = dataset_catex,
      aes(y = PropTotPred),
-     alpha = 0.4,
      size = 3,
      position = position_jitterdodge(
        dodge.width = 2,
@@ -182,8 +180,8 @@ newData %>%
    labs(
      x = "Latitude",
      y = expression(paste("Proportion attacked")) )+
-   scale_fill_manual(values = c("deepskyblue3", "goldenrod3"))+
-   scale_color_manual(values = c("deepskyblue3", "goldenrod3"))+
+   scale_fill_manual(values = c("#42adc7", "#ffb902"))+
+   scale_color_manual(values = c("#42adc7", "#ffb902"))+
    theme(
      text = element_text(size = text_size),
      legend.position = "right")) +
