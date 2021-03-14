@@ -57,8 +57,8 @@ dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
 theme_set(theme_classic())
 text_size <-  22
 
-PDF_width <-  10
-PDF_height <-  6
+PDF_width <-  6
+PDF_height <-  8
 
 # get the flat violin geom
 source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")

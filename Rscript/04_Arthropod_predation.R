@@ -189,7 +189,7 @@ newDataArth %>%
   theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 
 ggsave(
-  "figures/model_plot_03_ArthropodPredations.pdf",
+  "figures/OK_model_plot_03_ArthropodPredations.pdf",
   model_plot_03,
   width = PDF_width,
   height = PDF_height,

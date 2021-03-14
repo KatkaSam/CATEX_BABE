@@ -185,7 +185,7 @@ newDataBird %>%
   theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 
 ggsave(
-  "figures/model_plot_02_BirdPredations.pdf",
+  "figures/OK_model_plot_02_BirdPredations.pdf",
   model_plot_02,
   width = PDF_width,
   height = PDF_height,
