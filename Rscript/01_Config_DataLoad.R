@@ -34,6 +34,7 @@ library(dplyr)
 library(see)
 library(qqplotr)
 library(glmmTMB)
+library(merTools)
 
 #----------------------------------------------------------#
 # 1. Import data -----
@@ -47,7 +48,7 @@ Sites <- data.frame(Site = c("TOM", "LAK", "BUB", "KAK", "DRO", "EUC"),
                     Lat = c(42.68, 51.2, 21.6, -5.13, -16.1, -33.62))
 
 dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
-
+summary(dataset_catex)
 
 
 #----------------------------------------------------------#
@@ -55,7 +56,7 @@ dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
 #----------------------------------------------------------#
 
 theme_set(theme_classic())
-text_size <-  22
+text_size <-  18
 
 PDF_width <-  6
 PDF_height <-  8
@@ -64,6 +65,9 @@ PDF_height <-  8
 source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
 
 
-
-
-
+library(dplyr)
+df<-dataset_catex %>%
+  group_by(Site, Strata) %>% 
+  summarise_each(funs(mean))
+colnames(df)
+df[c("Site","Strata","BirdProp", "BirdProp", "Bird72")]
