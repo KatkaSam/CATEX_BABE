@@ -48,7 +48,11 @@ Sites <- data.frame(Site = c("TOM", "LAK", "BUB", "KAK", "DRO", "EUC"),
 
 dataset_catexB$Lat <- Sites$Lat[match(dataset_catexB$Site, Sites$Site)]
 summary(dataset_catexB)
-
+dataset_catexB$Branch <- factor(dataset_catexB$Branch)
+dataset_catexB$Site <- factor(dataset_catexB$Site)
+dataset_catexB$Strata <- factor(dataset_catexB$Strata)
+dataset_catexB$Species <- factor(dataset_catexB$Species)
+summary(dataset_catexB)
 
 #----------------------------------------------------------#
 # 2. graphical properties definition  -----

@@ -13,6 +13,7 @@
 # 3. Exploratory graphs  -----
 #----------------------------------------------------------#
 
+
 # see data
 summary(dataset_catex)
 
@@ -119,29 +120,33 @@ describeBy(
 # 3.1 Model build -----
 #----------------------------------------------------------#
 
-glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species),
+glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                   data = dataset_catex, family = "binomial")
-glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species),
+glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
-glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species),
+glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")                             
-glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species),
+glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species),
+glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
-glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species),
+glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species),
+glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species) + (1|Site) + (1|Branch),
                                          data = dataset_catex, family = "binomial")
-glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species),
+glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
 AICctab(glmm_total_predation_full, glmm_total_predation_module, glmm_total_predation_noStrata, glmm_total_predation_linear,
         glmm_total_predation_full_add, glmm_total_predation_linear_add, glmm_total_predation_Strata, glmm_total_predation_null)
 
+AICctab(glmm_total_predation_full, glmm_total_predation_full_add)
+
 # build the best model
 glm_predation_select<-glmm_total_predation_full
-summary(glmm_total_predation_full)
-anova(glmm_total_predation_full)
+
+# This step is exploratory only – inference is based on model selection (AICc) and predicted effects
+summary(glmm_total_predation_full) # exploratory only
+anova(glmm_total_predation_full)   # exploratory only
 
 ## Predict the values
 newData <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
@@ -165,7 +170,10 @@ library(merTools)
 #Generate the fitted lines for the model
 NewDataPredTot <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
                              Strata = rep(c("U", "C"), each = 500),
-                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)))
+                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)),
+                             Site = factor("LAK", levels = levels(model.frame(glm_predation_select)$Site)),
+                             Branch = factor("1", levels = levels(model.frame(glm_predation_select)$Branch)))
+NewDataPredTot
 
 Lat_poly <- poly(NewDataPredTot$Lat, 2, coefs = attr(model.frame(glm_predation_select)$`poly(Lat, 2)`, "coefs"))
 NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
@@ -173,8 +181,10 @@ NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
 NewDataPredTot$TotPredation <- predict(glm_predation_select, newdata = NewDataPredTot, re.form = NA, type = "response")
 TotPredInterval <- predictInterval(glm_predation_select, 
                                    newdata = NewDataPredTot, 
-                                   which = "fixed", level = 0.95, stat = "median",
-                                   n.sims = 20000, type = "probability")
+                                   which = "fixed", level = 0.95,
+                                   stat = "median",
+                                   n.sims = 20000, 
+                                   type = "probability")
 # Add the prediction intervals to the dataset
 NewDataPredTot$TotPredationLwr <- TotPredInterval$lwr
 NewDataPredTot$TotPredationUpr <- TotPredInterval$upr
@@ -184,7 +194,7 @@ summary(NewDataPredTot)
 str(NewDataPredTot)
 NewDataPredTot %>% 
   as_tibble() %>% 
-  write_csv("data/output/Predictions_total_predation_CI_20250120.csv")
+  write_csv("data/output/Predictions_total_predation_CI_20250805.csv")
 
 #----------------------------------------------------------#
 # 3.2 Figure from model draw -----
@@ -241,15 +251,11 @@ model_plot_01
 
 # save pdf
 ggsave(
-  "figures/Figure_1_total_predation_CI_20250116.pdf",
+  "figures/Figure_1_total_predation_CI_20250805.pdf",
   model_plot_01,
   width = PDF_width,
   height = PDF_height,
   units = "in")
-
-
-
-
 
 
 #----------------------------------------------------------#
@@ -275,7 +281,9 @@ library(merTools)
 #Generate the fitted lines for the model
 NewDataPredTot <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
                              Strata = NA,
-                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)))
+                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)),
+                             Site = factor("LAK", levels = levels(model.frame(glm_predation_select)$Site)),
+                             Branch = factor("1", levels = levels(model.frame(glm_predation_select)$Branch)))
 
 Lat_poly <- poly(NewDataPredTot$Lat, 2, coefs = attr(model.frame(glm_predation_select)$`poly(Lat, 2)`, "coefs"))
 NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
@@ -283,7 +291,7 @@ NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
 NewDataPredTot$TotPredation <- predict(glm_predation_select, newdata = NewDataPredTot, re.form = NA, type = "response")
 TotPredInterval <- predictInterval(glm_predation_select, 
                                    newdata = NewDataPredTot, 
-                                   which = "fixed", level = 0.65, stat = "median",
+                                   which = "fixed", level = 0.95, stat = "median",
                                    n.sims = 20000, type = "probability")
 # Add the prediction intervals to the dataset
 NewDataPredTot$TotPredationLwr <- TotPredInterval$lwr
@@ -295,7 +303,7 @@ str(NewDataPredTot)
 
 NewDataPredTot %>% 
   as_tibble() %>% 
-  write_csv("data/output/Predictions_NOSTRATA_total_predation_CI_20250120.csv")
+  write_csv("data/output/Predictions_NOSTRATA_total_predation_CI_20250805.csv")
 
 #----------------------------------------------------------#
 # 3.2 Figure from model draw -----
@@ -351,8 +359,13 @@ model_plot_02a
 
 # save pdf
 ggsave(
-  "figures/Figure_1_total_predation_NoStrata_CI_20250116.pdf",
+  "figures/Figure_1_total_predation_NoStrata_CI_20250805.pdf",
   model_plot_02a,
   width = PDF_width,
   height = PDF_height,
   units = "in")
+
+
+citation("lme4")
+citation("bbmle")
+citation("merTools")

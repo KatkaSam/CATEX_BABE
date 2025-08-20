@@ -119,29 +119,31 @@ describeBy(
 # 3.1 Model build -----
 #----------------------------------------------------------#
 
-glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species),
+glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                   data = dataset_catexB, family = "binomial")
-glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species),
+glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catexB, family = "binomial")
-glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species),
+glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catexB, family = "binomial")                             
-glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species),
+glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catexB, family = "binomial")
-glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species),
+glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catexB, family = "binomial")
-glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species),
+glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catexB, family = "binomial")
-glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species),
+glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species) + (1|Site) + (1|Branch),
                                          data = dataset_catexB, family = "binomial")
-glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species),
+glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catexB, family = "binomial")
 AICctab(glmm_total_predation_full, glmm_total_predation_module, glmm_total_predation_noStrata, glmm_total_predation_linear,
         glmm_total_predation_full_add, glmm_total_predation_linear_add, glmm_total_predation_Strata, glmm_total_predation_null)
 
 # build the best model
 glm_predation_select<-glmm_total_predation_full
-summary(glmm_total_predation_full)
-anova(glmm_total_predation_full)
+
+# This step is exploratory only – inference is based on model selection (AICc) and predicted effects
+summary(glmm_total_predation_full)   # exploratory only
+anova(glmm_total_predation_full)     # exploratory only
 
 ## Predict the values
 newData <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
@@ -164,7 +166,9 @@ library(merTools)
 #Generate the fitted lines for the model
 NewDataPredTot <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
                              Strata = rep(c("U", "C"), each = 500),
-                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)))
+                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)),
+                             Site = factor("LAK", levels = levels(model.frame(glm_predation_select)$Site)),
+                             Branch = factor("1", levels = levels(model.frame(glm_predation_select)$Branch)))
 
 Lat_poly <- poly(NewDataPredTot$Lat, 2, coefs = attr(model.frame(glm_predation_select)$`poly(Lat, 2)`, "coefs"))
 NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
@@ -184,7 +188,7 @@ str(NewDataPredTot)
 
 NewDataPredTot %>% 
   as_tibble() %>% 
-  write_csv("data/output/LostToBird_predictions_total_predation_CI_20250121.csv")
+  write_csv("data/output/LostToBird_predictions_total_predation_CI_20250805.csv")
 
 
 #----------------------------------------------------------#
@@ -231,7 +235,7 @@ TotalFull <- data.frame(Site = c("TOM", "TOM","LAK", "LAK","BUB", "BUB","KAK", "
   theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 
 ggsave(
-  "figures/OK_model_plot_01_TotalPredation_ToBIRDS.pdf",
+  "figures/OK_model_plot_01_TotalPredation_ToBIRDS_20250805.pdf",
   model_plot_01,
   width = PDF_width,
   height = PDF_height,

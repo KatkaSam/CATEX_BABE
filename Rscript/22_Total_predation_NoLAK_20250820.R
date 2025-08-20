@@ -119,29 +119,31 @@ describeBy(
 # 3.1 Model build -----
 #----------------------------------------------------------#
 
-glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species),
+glmm_total_predation_full <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                   data = dataset_catex, family = "binomial")
-glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species),
+glmm_total_predation_module <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
-glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species),
+glmm_total_predation_noStrata <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2) + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")                             
-glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species),
+glmm_total_predation_linear <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species),
+glmm_total_predation_full_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(Lat,2)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
-glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species),
+glmm_total_predation_linear_add <- glmer(cbind(TotalPred72H, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species),
+glmm_total_predation_Strata <- glmer(cbind(TotalPred72H, Survived72H)~Strata + (1|Species) + (1|Site) + (1|Branch),
                                          data = dataset_catex, family = "binomial")
-glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species),
+glmm_total_predation_null <- glmer(cbind(TotalPred72H, Survived72H)~1 + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
 AICctab(glmm_total_predation_full, glmm_total_predation_module, glmm_total_predation_noStrata, glmm_total_predation_linear,
         glmm_total_predation_full_add, glmm_total_predation_linear_add, glmm_total_predation_Strata, glmm_total_predation_null)
 
 # build the best model
 glm_predation_select<-glmm_total_predation_full
-summary(glmm_total_predation_full)
-anova(glmm_total_predation_full)
+
+# This step is exploratory only – inference is based on model selection (AICc) and predicted effects
+summary(glmm_total_predation_full) # exploratory only
+anova(glmm_total_predation_full)   # exploratory only
 
 ## Predict the values
 newData <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
@@ -164,17 +166,25 @@ lines(newData$Lat[newData$Strata == "C"],
 library(merTools)
 #Generate the fitted lines for the model
 NewDataPredTot <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
-                              Strata = rep(c("U", "C"), each = 500),
-                              Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)))
+                             Strata = rep(c("U", "C"), each = 500),
+                             Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)),
+                             Site = factor("BUB", levels = levels(model.frame(glm_predation_select)$Site)),
+                             Branch = factor("1", levels = levels(model.frame(glm_predation_select)$Branch)))
 
 Lat_poly <- poly(NewDataPredTot$Lat, 2, coefs = attr(model.frame(glm_predation_select)$`poly(Lat, 2)`, "coefs"))
 NewDataPredTot <- cbind(NewDataPredTot, Lat_poly)
 
 NewDataPredTot$TotPredation <- predict(glm_predation_select, newdata = NewDataPredTot, re.form = NA, type = "response")
-NewDataPredTot$TotPredationIntervals <- predictInterval(glm_predation_select, 
-                                                          newdata = NewDataPredTot, 
-                                                          which = "fixed", level = 0.4, stat = "median",
-                                                          n.sims = 20000, type = "probability")
+TotPredInterval <- predictInterval(glm_predation_select, 
+                                   newdata = NewDataPredTot, 
+                                   which = "fixed", level = 0.95,
+                                   stat = "median",
+                                   n.sims = 20000, 
+                                   type = "probability")
+
+# Add the prediction intervals to the dataset
+NewDataPredTot$TotPredationLwr <- TotPredInterval$lwr
+NewDataPredTot$TotPredationUpr <- TotPredInterval$upr
 
 NewDataPredTot %>% 
   as_tibble() %>% 
@@ -190,7 +200,7 @@ NewDataPredTot$TotPredationIntervals.lwr <- NewDataPredTot$TotPredationIntervals
 NewDataPredTot$TotPredationIntervals.upr <- NewDataPredTot$TotPredationIntervals$upr
 
 
-TotalFull <- data.frame(Site = c("TOM", "TOM","BUB", "BUB","KAK", "KAK","DRO", "DRO","EUC","EUC"),
+TotalFull <- data.frame(Site = c("TOM", "TOM","BUB", "BUB","KAK", "KAK","DRO","DRO","EUC","EUC"),
                     Strata = c("U", "C", "U", "C","U", "C","U", "C","U", "C"),
                     Lat = c(42.68, 42.68,  21.6, 21.6, -5.13, -5.13, -16.1, -16.1, -33.62, -33.62),
                     pred<-c(0.31926, 0.31926, 0.12821, 0.12821, 0.14815, 0.14815, 0.28924, 0.28924, 0.29174, 0.29174))
@@ -213,8 +223,8 @@ TotalFull <- data.frame(Site = c("TOM", "TOM","BUB", "BUB","KAK", "KAK","DRO", "
        jitter.width = 2)) +
    
     geom_line(data = NewDataPredTot, aes(y = TotPredation ), size = 2) +
-    geom_line(data = NewDataPredTot, aes(y = TotPredationIntervals$lwr), alpha = 0.4, size = 1, linetype="dashed") +
-    geom_line(data = NewDataPredTot, aes(y = TotPredationIntervals$upr), alpha = 0.4, size = 1, linetype="dashed") +
+    geom_line(data = NewDataPredTot, aes(y = TotPredationLwr), alpha = 0.4, size = 1, linetype="dashed") +
+    geom_line(data = NewDataPredTot, aes(y = TotPredationUpr), alpha = 0.4, size = 1, linetype="dashed") +
     
   coord_flip()  +
    

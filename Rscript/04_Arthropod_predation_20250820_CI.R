@@ -111,28 +111,30 @@ ggsave(
 # 5.1 Model build for arthropod predation  -----
 #----------------------------------------------------------#
 
-glmm_arthropod_predation_full <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)*Strata + (1|Species),
+glmm_arthropod_predation_full <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_module <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species),
+glmm_arthropod_predation_module <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),2)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_noStrata <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2) + (1|Species),
+glmm_arthropod_predation_noStrata <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2) + (1|Species) + (1|Site) + (1|Branch),
                                        data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_linear <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species),
+glmm_arthropod_predation_linear <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)*Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_full_add <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)+Strata + (1|Species),
+glmm_arthropod_predation_full_add <- glmer(cbind(Arth72, Survived72H)~poly(Lat,2)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                        data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_linear_add <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species),
+glmm_arthropod_predation_linear_add <- glmer(cbind(Arth72, Survived72H)~poly(abs(Lat),1)+Strata + (1|Species) + (1|Site) + (1|Branch),
                                          data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_Strata <- glmer(cbind(Arth72, Survived72H)~Strata + (1|Species),
+glmm_arthropod_predation_Strata <- glmer(cbind(Arth72, Survived72H)~Strata + (1|Species) + (1|Site) + (1|Branch),
                                      data = dataset_catex, family = "binomial")
-glmm_arthropod_predation_null <- glmer(cbind(Arth72, Survived72H)~1 + (1|Species),
+glmm_arthropod_predation_null <- glmer(cbind(Arth72, Survived72H)~1 + (1|Species) + (1|Site) + (1|Branch),
                                    data = dataset_catex, family = "binomial")
 AICctab(glmm_arthropod_predation_full, glmm_arthropod_predation_module, glmm_arthropod_predation_noStrata, glmm_arthropod_predation_linear,
         glmm_arthropod_predation_full_add, glmm_arthropod_predation_linear_add, glmm_arthropod_predation_Strata, glmm_arthropod_predation_null)
 
 glm_arthropod_predation_select <- glmm_arthropod_predation_full
-summary(glmm_arthropod_predation_full)
-anova(glmm_arthropod_predation_full)
+
+# This step is exploratory only – inference is based on model selection (AICc) and predicted effects
+summary(glmm_arthropod_predation_full) # exploratory only
+anova(glmm_arthropod_predation_full)   # exploratory only
 
 ## Predict the values
 newDataArth <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
@@ -156,7 +158,9 @@ library(merTools)
 #Generate the fitted lines for the model
 NewDataPredArth <- data.frame(Lat = rep(seq(from = -40, to = 55, length.out = 500),2),
                               Strata = rep(c("U", "C"), each = 500),
-                              Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_arthropod_predation_select)$Species)))
+                              Species = factor("Acacia_parramattensis", levels = levels(model.frame(glm_predation_select)$Species)),
+                              Site = factor("LAK", levels = levels(model.frame(glm_predation_select)$Site)),
+                              Branch = factor("1", levels = levels(model.frame(glm_predation_select)$Branch)))
 
 Lat_poly <- poly(NewDataPredArth$Lat, 2, coefs = attr(model.frame(glm_arthropod_predation_select)$`poly(Lat, 2)`, "coefs"))
 NewDataPredArth <- cbind(NewDataPredArth, Lat_poly)
@@ -164,7 +168,7 @@ NewDataPredArth <- cbind(NewDataPredArth, Lat_poly)
 NewDataPredArth$ArthPredation <- predict(glm_arthropod_predation_select, newdata = NewDataPredArth, re.form = NA, type = "response")
 ArthPredInterval <- predictInterval(glm_arthropod_predation_select, 
                                     newdata = NewDataPredArth, 
-                                    which = "fixed", level = 0.65, stat = "median",
+                                    which = "fixed", level = 0.95, stat = "median",
                                     n.sims = 20000, type = "probability")
 # Add the prediction intervals to the dataset
 NewDataPredArth$ArthPredationLwr <- ArthPredInterval$lwr
@@ -177,7 +181,7 @@ NewDataPredArth$Strata<-as.factor(NewDataPredArth$Strata)
 
 NewDataPredArth %>% 
   as_tibble() %>% 
-  write_csv("data/output/Predictions_arth_predation_CI_20250120.csv")
+  write_csv("data/output/Predictions_arth_predation_CI_20250805.csv")
 
 #----------------------------------------------------------#
 # 5.2 Figure from model draw -----
@@ -231,7 +235,7 @@ NewDataPredArth %>%
   theme(axis.ticks = element_line(colour = "black", size = 1, linetype = "solid"))
 
 ggsave(
-  "figures/Figure_2_arthropodPredations_CI_20250120.pdf",
+  "figures/Figure_2_arthropodPredations_CI_20250805.pdf",
   model_plot_03,
   width = PDF_width,
   height = PDF_height,

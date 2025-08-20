@@ -157,7 +157,7 @@ NewDataPredArth <- cbind(NewDataPredArth, Lat_poly)
 NewDataPredArth$ArthPredation <- predict(glm_arthropod_predation_select, newdata = NewDataPredArth, re.form = NA, type = "response")
 NewDataPredArth$ArthPredationIntervals <- predictInterval(glm_arthropod_predation_select, 
                                                       newdata = NewDataPredArth, 
-                                              which = "fixed", level = 0.4, stat = "median",
+                                              which = "fixed", level = 0.95, stat = "median",
                                               n.sims = 20000, type = "probability")
 
 NewDataPredArth %>% 

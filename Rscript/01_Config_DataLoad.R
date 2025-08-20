@@ -35,6 +35,7 @@ library(see)
 library(qqplotr)
 library(glmmTMB)
 library(merTools)
+library(readr)
 
 #----------------------------------------------------------#
 # 1. Import data -----
@@ -49,7 +50,11 @@ Sites <- data.frame(Site = c("TOM", "LAK", "BUB", "KAK", "DRO", "EUC"),
 
 dataset_catex$Lat <- Sites$Lat[match(dataset_catex$Site, Sites$Site)]
 summary(dataset_catex)
-
+dataset_catex$Branch <- factor(dataset_catex$Branch)
+dataset_catex$Site <- factor(dataset_catex$Site)
+dataset_catex$Strata <- factor(dataset_catex$Strata)
+dataset_catex$Species <- factor(dataset_catex$Species)
+summary(dataset_catex)
 
 #----------------------------------------------------------#
 # 2. graphical properties definition  -----
